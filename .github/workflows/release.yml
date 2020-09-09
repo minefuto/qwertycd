@@ -1,0 +1,93 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  APPNAME: qwertycd
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest 
+    steps:
+    - name: Create release
+      id: create-release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Output Release URL File
+      run: echo "${{ steps.create-release.outputs.upload_url }}" > release_url.txt
+    - name: Save Release URL File for publish
+      uses: actions/upload-artifact@v1
+      with:
+        name: release_url
+        path: release_url.txt
+
+  build-and-upload:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jiro4989/setup-nim-action@v1
+      - name: Build
+        run: nimble build -y -d:release
+      - name: Create tar.gz(Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd bin
+          chmod 755 ${{ env.APPNAME }}
+          tar zcvf ${{ env.APPNAME }}_linux_amd64.tar.gz ${{ env.APPNAME }}
+          cd ../
+      - name: Create tar.gz(macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd bin
+          chmod 755 ${{ env.APPNAME }}
+          tar zcvf ${{ env.APPNAME }}_macos_amd64.tar.gz ${{ env.APPNAME }}
+          cd ../
+      - name: Load Release URL File from release job
+        uses: actions/download-artifact@v1
+        with:
+          name: release_url
+      - name: Get Release File Name & Upload URL
+        id: get_release_info
+        run: |
+          value=`cat release_url/release_url.txt`
+          echo ::set-output name=upload_url::$value
+        shell: bash
+
+      - name: Upload Release Asset(Linux)
+        if: runner.os == 'Linux'
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: bin/${{ env.APPNAME }}_linux_amd64.tar.gz
+          asset_name: ${{ env.APPNAME }}_linux_amd64.tar.gz
+          asset_content_type: application/octet-stream
+          
+      - name: Upload Release Asset(macOS)
+        if: runner.os == 'macOS'
+        id: upload-release-asset-macos
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: bin/${{ env.APPNAME }}_macos_amd64.tar.gz
+          asset_name: ${{ env.APPNAME }}_macos_amd64.tar.gz
+          asset_content_type: application/octet-stream
