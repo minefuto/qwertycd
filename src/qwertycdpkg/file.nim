@@ -1,8 +1,9 @@
 import os, strformat, strutils
 
 proc saveDirPath*(path: string): string =
-  let cacheDir = getEnv("XDG_CACHE_HOME", getHomeDir() /
-                        ".cache" / "qwertycd")
+  let cacheEnv = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache")
+  let cacheDir = cacheEnv / "qwertycd"
+
   try:
     createDir(cacheDir)
   except OSError:
