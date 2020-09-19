@@ -1,5 +1,8 @@
 # qwertycd
-This is terminal UI based cd command written in Nim.
+![GitHub](https://img.shields.io/github/license/minefuto/qwertycd?style=for-the-badge)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/minefuto/qwertycd?style=for-the-badge)
+
+This is terminal UI based `cd` command written in Nim.
 
 <img src="https://github.com/minefuto/qwertycd/blob/master/gif/qwertycd.gif">
 
@@ -7,7 +10,7 @@ This is terminal UI based cd command written in Nim.
 
 ### 1. Install the qwertycd binary.
 ```
-nimble install https://github.com/minefuto/qwertycd.git
+nimble install qwertycd
 ```
 
 Or, download the binary from Release Page and drop it in your `$PATH`.  
@@ -57,6 +60,3 @@ function qcd() {
 ```
 ## Supported OS
 macOS, Linux, Windows
-
-## License
-MIT
