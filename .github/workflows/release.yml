@@ -37,6 +37,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - windows-latest
           - macOS-latest
     steps:
       - uses: actions/checkout@v2
@@ -50,6 +51,12 @@ jobs:
           chmod 755 ${{ env.APPNAME }}
           tar zcvf ${{ env.APPNAME }}_linux_amd64.tar.gz ${{ env.APPNAME }}
           cd ../
+      - name: Create zip(Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd bin
+          7z a -tzip ${{ env.APPNAME }}_windows_amd64.zip ${{ env.APPNAME }}.exe
+          cd ..\
       - name: Create tar.gz(macOS)
         if: runner.os == 'macOS'
         run: |
@@ -79,7 +86,17 @@ jobs:
           asset_path: bin/${{ env.APPNAME }}_linux_amd64.tar.gz
           asset_name: ${{ env.APPNAME }}_linux_amd64.tar.gz
           asset_content_type: application/octet-stream
-          
+      - name: Upload Release Asset(Windows)
+        if: runner.os == 'Windows'
+        id: upload-release-asset-windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: bin/${{ env.APPNAME }}_windows_amd64.zip
+          asset_name: ${{ env.APPNAME }}_windows_amd64.zip
+          asset_content_type: application/zip
       - name: Upload Release Asset(macOS)
         if: runner.os == 'macOS'
         id: upload-release-asset-macos

@@ -1,4 +1,5 @@
-import algorithm, os, sequtils, strformat
+import algorithm, os, strformat
+when defined(windows): import regex
 
 const Qwerty =
   @["Q", "W", "E", "R", "T", "Y", "U", "I",
@@ -34,11 +35,18 @@ proc pageNum*(dt: DirTable): tuple[cur: int, all: int] {.inline.} =
 proc getMark(path: string): string =
   try:
     let f = getFileInfo(path, followSymlink = false)
-    case f.kind
-    of pcLinkToDir: result = "@/ -> " & expandSymlink(path)
-    of pcLinkToFile: result = "@ -> " & expandSymlink(path)
-    of pcDir: result = "/"
-    of pcFile: result = ""
+    when defined(windows):
+      case f.kind
+      of pcLinkToDir: result = "@/"
+      of pcLinkToFile: result = "@"
+      of pcDir: result = "/"
+      of pcFile: result = ""
+    else:
+      case f.kind
+      of pcLinkToDir: result = "@/ -> " & expandSymlink(path)
+      of pcLinkToFile: result = "@ -> " & expandSymlink(path)
+      of pcDir: result = "/"
+      of pcFile: result = ""
   except OSError:
     result = ""
 
@@ -83,11 +91,18 @@ proc updatePath*(dt: DirTable, path: string) =
   dt.updatePageNum()
 
 proc updatePathToParentDir*(dt: DirTable): string =
-  if dt.path == "/":
-    result = fmt"'{dt.path}' is root directory."
+  when defined(windows):
+    if dt.path.match(re"[A-Z]:$"):
+      result = fmt"'{dt.path}' is root directory."
+    else:
+      dt.updatePath(dt.path.parentDir())
+      result = ""
   else:
-    dt.updatePath(dt.path.parentDir())
-    result = ""
+    if dt.path == "/":
+      result = fmt"'{dt.path}' is root directory."
+    else:
+      dt.updatePath(dt.path.parentDir())
+      result = ""
 
 proc newDirTable*(path: string): DirTable =
   var dt = new DirTable

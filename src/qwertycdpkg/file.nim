@@ -1,21 +1,22 @@
-import os, strformat, strutils
+import os, strformat
 
-proc saveDirPath*(path: string): string =
-  let cacheEnv = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache")
-  let cacheDir = cacheEnv / "qwertycd"
+let cacheEnv = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache")
+let cacheDir = cacheEnv / "qwertycd"
+let cacheFile = cacheDir / "cache_dir"
 
+proc createCacheDir*(path: string): string =
   try:
     createDir(cacheDir)
   except OSError:
-    let err = getCurrentExceptionMsg().splitLines[0]
-    return fmt"'{cacheDir}' cannot be created because '{err}'."
+    return fmt"'{cacheDir}' cannot be created."
+  result = ""
 
-  let cacheFile = cacheDir / "cache_dir"
+
+proc writeDirPath*(path: string): string =
   try:
     var f: File = open(cacheFile, FileMode.fmWrite)
     defer: close(f)
     f.writeLine(path)
   except IOError:
-    let err = getCurrentExceptionMsg().splitLines[0]
-    return fmt"'{cacheFile}' cannot be created because '{err}'."
+    return fmt"'{cacheFile}' cannot be created."
   result = ""

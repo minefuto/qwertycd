@@ -11,7 +11,9 @@ proc main() =
   var s = newStatus()
   var isClear = false
 
-  s.msg = saveDirPath(dt.path)
+  s.errMsg = createCacheDir(dt.path)
+  if s.errMsg == "":
+    s.errMsg = writeDirPath(dt.path)
   startUi()
 
   while true:

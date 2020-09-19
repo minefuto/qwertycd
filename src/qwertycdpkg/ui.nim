@@ -2,7 +2,7 @@ import mimetypes, os, osproc, strutils, strformat
 import illwill
 import dirtable, file, preview, status
 
-const AppName = "qwertycd v0.1.0"
+const AppName = "qwertycd v0.1.1"
 
 proc exitProc() {.noconv.} =
   illwillDeinit()
@@ -16,7 +16,7 @@ proc startUi*() =
 
 proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool) =
   var tb = newTerminalBuffer(terminalWidth(), terminalHeight())
-  dt.refreshHeight(tb.height - 3)
+  dt.refreshHeight(tb.height - 4)
   p.refreshWidth(tb.width)
 
   # draw TopLine
@@ -28,12 +28,11 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool) =
       tb.write(tb.width - AppName.len, 0, AppName)
     else:
       tb.fill(dt.path.len, 0, tb.width - 1, 0)
+  tb.resetAttributes()
 
   # draw BottomLine
   if tb.height > 1 and tb.width > 0:
-    tb.fill(0, tb.height - 1, tb.width - 1, tb.height - 1)
-    tb.write(0, tb.height - 1, s.msg)
-  tb.resetAttributes()
+    tb.write(0, tb.height - 1, s.getStatusMsg())
 
   # draw PageNumber
   if tb.height > 2 and tb.width > 0:
@@ -41,23 +40,24 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool) =
 
   # draw Entries
   for i, entry in dt.calcCurEntries():
-    if entry.mark.startsWith('@'):
-      tb.setForegroundColor(fgMagenta)
-    elif entry.mark == "/":
-      tb.setForegroundColor(fgBlue)
+    when defined(unix):
+      if entry.mark.startsWith('@'):
+        tb.setForegroundColor(fgMagenta)
+      elif entry.mark == "/":
+        tb.setForegroundColor(fgBlue)
 
     tb.write(3, i + 2, entry.path.splitPath.tail, entry.mark)
     tb.write(1, i + 2, styleBright, dt.getQwerty(i))
 
     tb.resetAttributes()
 
-  # draw PreviewWindow
+  # draw Preview
   if (p.text != "") and tb.height > 3 and tb.width > 0:
     tb.fill(p.x, 1, tb.width - 1, tb.height - 2)
-    tb.drawVertLine(p.x, 1, tb.height - 2, doubleStyle = true)
+    tb.drawRect(p.x, 1, tb.width, tb.height - 2, doubleStyle = true)
     for i, line in p.readLine():
-      if i > tb.height - 3: break
-      tb.write(p.x + 1, i + 1, line)
+      if i > tb.height - 5: break
+      tb.write(p.x + 1, i + 2, line)
 
   if isClear:
     tb.clear()
@@ -78,17 +78,17 @@ proc keyAction*(dt: DirTable, p: Preview, s: Status, isClear: var bool) =
   let key = getKey()
   case key
   of Key.None: discard
-  of Key.Enter: s.msg = saveDirPath(dt.path); exitProc()
-  of Key.Escape: s.msg = ""; p.updateTextToClear()
-  of Key.QuestionMark: s.msg = ""; p.updateTextToHelp()
-  of Key.GreaterThan: s.msg = p.plusX()
-  of Key.LessThan: s.msg = p.minusX()
-  of Key.CtrlN: s.msg = dt.plusCurIndex()
-  of Key.CtrlP: s.msg = dt.minusCurIndex()
-  of Key.CtrlL: s.msg = ""; isClear = true
-  of Key.Tilde: s.msg = ""; dt.updatePath(getHomeDir().normalizePathEnd())
-  of Key.Minus: s.msg = dt.updatePathToParentDir()
-  of Key.Dot: s.msg = dt.toggleShowHidden()
+  of Key.Enter: s.errMsg = writeDirPath(dt.path); exitProc()
+  of Key.Escape: s.clearStatusMsg(); p.updateTextToClear()
+  of Key.QuestionMark: s.clearStatusMsg(); p.updateTextToHelp()
+  of Key.GreaterThan: s.errMsg = p.plusX()
+  of Key.LessThan: s.errMsg = p.minusX()
+  of Key.CtrlN: s.errMsg = dt.plusCurIndex()
+  of Key.CtrlP: s.errMsg = dt.minusCurIndex()
+  of Key.CtrlL: s.clearErrMsg(); isClear = true
+  of Key.Tilde: s.clearErrMsg(); dt.updatePath(getHomeDir().normalizePathEnd())
+  of Key.Minus: s.errMsg = dt.updatePathToParentDir()
+  of Key.Dot: s.errMsg = dt.toggleShowHidden()
   else:
     let index = dt.getQwertyIndex($key)
     if index != -1:
@@ -96,20 +96,20 @@ proc keyAction*(dt: DirTable, p: Preview, s: Status, isClear: var bool) =
       try:
         entry = dt.calcCurEntries()[index]
       except IndexError:
-        s.msg = fmt"'{$key}' does not exist."
+        s.errMsg = fmt"'{$key}' does not exist."
         return
       except OSError:
-        let err = getCurrentExceptionMsg().splitLines[0]
-        s.msg = fmt"'{entry.path}' cannot be opened because '{err}'."
+        s.errMsg = fmt"'{entry.path}' cannot be opened."
         return
 
       if entry.mark == "/" or entry.mark.startsWith("@/"):
         dt.updatePath(entry.path)
-        s.msg = ""
+        s.clearErrMsg()
       elif entry.path.isBinary:
-        s.msg = fmt"'{entry.path}' cannot be opened " &
+        s.errMsg = fmt"'{entry.path}' cannot be opened " &
                    "because it is a binary file."
       else:
-        s.msg = p.updateTextToReadFile(entry.path)
+        s.errMsg = p.updateTextToReadFile(entry.path)
+        s.updateFileMsg(entry.path)
     else:
       discard
