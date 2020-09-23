@@ -14,5 +14,6 @@ bin           = @["qwertycd"]
 
 requires "nim >= 1.2.6"
 requires "illwill >= 0.2.0"
+requires "parsetoml >= 0.5.0"
 when defined(windows):
   requires "regex >= 0.16.2"

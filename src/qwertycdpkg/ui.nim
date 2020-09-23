@@ -1,6 +1,6 @@
 import mimetypes, os, osproc, strutils, strformat
 import illwill
-import dirtable, file, preview, status
+import dirtable, extconfig, preview, status
 
 const AppName = "qwertycd v0.1.1"
 
@@ -14,7 +14,7 @@ proc startUi*() =
   setControlCHook(exitProc)
   hideCursor()
 
-proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool) =
+proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool, params: ConfigParams) =
   var tb = newTerminalBuffer(terminalWidth(), terminalHeight())
   dt.refreshHeight(tb.height - 4)
   p.refreshWidth(tb.width)
@@ -40,11 +40,10 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool) =
 
   # draw Entries
   for i, entry in dt.calcCurEntries():
-    when defined(unix):
-      if entry.mark.startsWith('@'):
-        tb.setForegroundColor(fgMagenta)
-      elif entry.mark == "/":
-        tb.setForegroundColor(fgBlue)
+    if entry.mark.startsWith('@'):
+      tb.setForegroundColor(params.symlinkColor)
+    elif entry.mark == "/":
+      tb.setForegroundColor(params.dirColor)
 
     tb.write(3, i + 2, entry.path.splitPath.tail, entry.mark)
     tb.write(1, i + 2, styleBright, dt.getQwerty(i))
