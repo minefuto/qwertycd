@@ -4,6 +4,15 @@ import dirtable, extconfig, preview, status
 
 const AppName = "qwertycd v0.1.1"
 
+proc isBinary(path: string): bool =
+  var p = path.replace(" ", "\\ ")
+  if findExe("file", true) == "":
+    var m = newMimetypes()
+    result = not m.getMimetype(path.splitFile.ext).contains("text")
+  else:
+    let (cmd, _) = execCmdEx("file --mime " & p)
+    result = cmd.contains("charset=binary")
+
 proc exitProc() {.noconv.} =
   illwillDeinit()
   showCursor()
@@ -14,7 +23,7 @@ proc startUi*() =
   setControlCHook(exitProc)
   hideCursor()
 
-proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool, params: ConfigParams) =
+proc writeUi*(dt: DirTable, p: Preview, s: Status, params: ConfigParams) =
   var tb = newTerminalBuffer(terminalWidth(), terminalHeight())
   dt.refreshHeight(tb.height - 4)
   p.refreshWidth(tb.width)
@@ -58,36 +67,24 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, isClear: bool, params: Config
       if i > tb.height - 5: break
       tb.write(p.x + 1, i + 2, line)
 
-  if isClear:
-    tb.clear()
-
   tb.display()
   sleep(20)
 
-proc isBinary(path: string): bool =
-  var p = path.replace(" ", "\\ ")
-  if findExe("file", true) == "":
-    var m = newMimetypes()
-    result = not m.getMimetype(path.splitFile.ext).contains("text")
-  else:
-    let (cmd, _) = execCmdEx("file --mime " & p)
-    result = cmd.contains("charset=binary")
-
-proc keyAction*(dt: DirTable, p: Preview, s: Status, isClear: var bool) =
+  # key Action
   let key = getKey()
   case key
   of Key.None: discard
-  of Key.Enter: s.errMsg = writeDirPath(dt.path); exitProc()
+  of Key.Enter: s.infoMsg = writeDirPath(dt.path); exitProc()
   of Key.Escape: s.clearStatusMsg(); p.updateTextToClear()
   of Key.QuestionMark: s.clearStatusMsg(); p.updateTextToHelp()
-  of Key.GreaterThan: s.errMsg = p.plusX()
-  of Key.LessThan: s.errMsg = p.minusX()
-  of Key.CtrlN: s.errMsg = dt.plusCurIndex()
-  of Key.CtrlP: s.errMsg = dt.minusCurIndex()
-  of Key.CtrlL: s.clearErrMsg(); isClear = true
-  of Key.Tilde: s.clearErrMsg(); dt.updatePath(getHomeDir().normalizePathEnd())
-  of Key.Minus: s.errMsg = dt.updatePathToParentDir()
-  of Key.Dot: s.errMsg = dt.toggleShowHidden()
+  of Key.GreaterThan: s.infoMsg = p.plusX()
+  of Key.LessThan: s.infoMsg = p.minusX()
+  of Key.CtrlN: s.infoMsg = dt.plusCurIndex()
+  of Key.CtrlP: s.infoMsg = dt.minusCurIndex()
+  of Key.CtrlL: s.clearInfoMsg(); tb.clear(); tb.display()
+  of Key.Tilde: s.clearInfoMsg(); dt.updatePath(getHomeDir().normalizePathEnd())
+  of Key.Minus: s.infoMsg = dt.updatePathToParentDir()
+  of Key.Dot: s.infoMsg = dt.toggleShowHidden()
   else:
     let index = dt.getQwertyIndex($key)
     if index != -1:
@@ -95,20 +92,20 @@ proc keyAction*(dt: DirTable, p: Preview, s: Status, isClear: var bool) =
       try:
         entry = dt.calcCurEntries()[index]
       except IndexError:
-        s.errMsg = fmt"'{$key}' does not exist."
+        s.infoMsg = fmt"'{$key}' does not exist."
         return
       except OSError:
-        s.errMsg = fmt"'{entry.path}' cannot be opened."
+        s.infoMsg = fmt"'{entry.path}' cannot be opened."
         return
 
       if entry.mark == "/" or entry.mark.startsWith("@/"):
         dt.updatePath(entry.path)
-        s.clearErrMsg()
+        s.clearInfoMsg()
       elif entry.path.isBinary:
-        s.errMsg = fmt"'{entry.path}' cannot be opened " &
+        s.infoMsg = fmt"'{entry.path}' cannot be opened " &
                    "because it is a binary file."
       else:
-        s.errMsg = p.updateTextToReadFile(entry.path)
+        s.infoMsg = p.updateTextToReadFile(entry.path)
         s.updateFileMsg(entry.path)
     else:
       discard

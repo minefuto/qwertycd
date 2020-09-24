@@ -10,18 +10,14 @@ proc main() =
   var dt = newDirtable(getCurrentDir())
   var p = newPreview()
   var s = newStatus()
-  var isClear = false
 
-  s.errMsg = createCacheDir()
-  if s.errMsg == "":
-    s.errMsg = writeDirPath(dt.path)
+  s.infoMsg = createCacheDir()
+  if s.infoMsg == "":
+    s.infoMsg = writeDirPath(dt.path)
   startUi()
 
   while true:
-    writeUi(dt, p, s, isClear, params)
-    if isClear:
-      isClear = false
-    keyAction(dt, p, s, isClear)
+    writeUi(dt, p, s, params)
 
 when isMainModule:
   main()

@@ -1,33 +1,33 @@
 import os, osproc, strutils
 
 type Status* = ref object
-  errMsg: string
+  infoMsg: string
   fileMsg: string
 
 proc newStatus*(): Status =
   var s = new Status
-  s.errMsg = ""
+  s.infoMsg = ""
   s.filemsg = ""
   result = s
 
-proc errMsg*(s: Status): string {.inline.} =
-  result = s.errMsg
+proc infoMsg*(s: Status): string {.inline.} =
+  result = s.infoMsg
 
-proc `errMsg=`*(s: Status, msg: string) {.inline.}  =
-  s.errMsg = msg
+proc `infoMsg=`*(s: Status, msg: string) {.inline.}  =
+  s.infoMsg = msg
 
-proc clearErrMsg*(s: Status) =
-  s.errMsg = ""
+proc clearInfoMsg*(s: Status) =
+  s.infoMsg = ""
 
 proc clearStatusMsg*(s: Status) =
-  s.errMsg = ""
+  s.infoMsg = ""
   s.fileMsg = ""
 
 proc getStatusMsg*(s: Status): string =
-  if s.errMsg == "":
+  if s.infoMsg == "":
     result = s.fileMsg
   else:
-    result = s.errMsg
+    result = s.infoMsg
 
 proc updateFileMsg*(s: Status, path: string) =
   if findExe("ls", true) == "":

@@ -50,7 +50,7 @@ end
 ```
 
 If defined `$XDG_CACHE_HOME` variable environment,  
-please replace the above configuration from `~/.cache` to `$XDG_CACHE_HOME`.  
+please replace the above configuration from `$HOME/.cache` to `$XDG_CACHE_HOME`.  
 example:  
 ```
 function qcd() {

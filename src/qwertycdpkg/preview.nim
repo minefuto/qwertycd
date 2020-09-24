@@ -63,8 +63,7 @@ proc updateTextToReadFile*(p: Preview, path: string): string =
     p.text = f.readAll()
     result = ""
   except IOError:
-    let err = getCurrentExceptionMsg().splitLines[0]
-    result = fmt"'{path}' cannot be opened because '{err}'."
+    result = fmt"'{path}' cannot be opened."
 
 proc refreshWidth*(p: Preview, width: int) =
   if p.width != width and width != 0:
