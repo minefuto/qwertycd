@@ -1,4 +1,4 @@
-import os, strformat
+import deques, os, strformat
 import illwill, parsetoml
 
 let cacheDir = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache") / "qwertycd"
@@ -6,10 +6,12 @@ let cacheDir = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache") / "qwertycd"
 type ConfigParams* = object
   dirColor*: ForegroundColor
   symlinkColor*: ForegroundColor
+  historySize*: int
 
 proc initConfigParams(): ConfigParams =
   result.dirColor = fgBlue
   result.symlinkColor = fgMagenta
+  result.historySize = 26
 
 proc createCacheDir*(): string =
   try:
@@ -18,14 +20,28 @@ proc createCacheDir*(): string =
     return fmt"'{cacheDir}' cannot be created."
   result = ""
 
-proc writeDirPath*(path: string): string =
+proc writeCacheFile*(path: string): string =
   let cacheFile = cacheDir / "cache_dir"
   try:
     var f: File = open(cacheFile, FileMode.fmWrite)
     defer: close(f)
     f.writeLine(path)
   except IOError:
-    return fmt"'{cacheFile}' cannot be created."
+    return fmt"Failed to write to '{cacheFile}'."
+  result = ""
+
+proc writeHistoryFile*(histories: var Deque[string],
+                       path: string, size: int): string =
+  let historyFile = cacheDir / "history_dir"
+  if histories.len >= size: histories.popLast()
+  histories.addFirst(path)
+  try:
+    var f: File = open(historyFile, FileMode.fmWrite)
+    defer: close(f)
+    for path in histories:
+      f.writeLine(path)
+  except IOError:
+    return fmt"Failed to write to '{historyFile}'."
   result = ""
 
 proc parseColor(color: string): ForegroundColor =
@@ -40,21 +56,43 @@ proc parseColor(color: string): ForegroundColor =
   of "White": result = fgWhite
   else: result = fgNone
 
-proc parseConfigFile(toml: TomlValueRef): ConfigParams =
-  result = initConfigParams()
+proc parseConfigFile(toml: TomlValueRef):
+                     tuple[cfg: ConfigParams, bookmarks: seq[string]] =
+  result = (initConfigParams(), newSeq[string]())
   if toml.contains("Color"):
     if toml["Color"].contains("dir"):
-      result.dirColor = parseColor(toml["Color"]["dir"].getStr())
+      result.cfg.dirColor = parseColor(toml["Color"]["dir"].getStr())
 
   if toml.contains("Color"):
     if toml["Color"].contains("symlink"):
-      result.symlinkColor = parseColor(toml["Color"]["symlink"].getStr())
+      result.cfg.symlinkColor = parseColor(toml["Color"]["symlink"].getStr())
 
-proc loadConfigFile*(): ConfigParams =
+  if toml.contains("History"):
+    if toml["History"].contains("size"):
+      result.cfg.historySize = toml["History"]["size"].getInt()
+
+  if toml.contains("Bookmark"):
+    if toml["Bookmark"].contains("path"):
+      let paths = toml["Bookmark"]["path"]
+      for i in 0 ..< paths.len:
+        result.bookmarks.add(paths[i].getStr())
+
+proc loadConfigFile*(): tuple[cfg: ConfigParams, bookmarks: seq[string]] =
   let configFile = getConfigDir() / "qwertycd" / "qwertycd.toml"
 
   if not fileExists(configFile):
-    result = initConfigParams()
+    result = (initConfigParams(), newSeq[string]())
   else:
     let toml = parsetoml.parseFile(configFile)
     result = parseConfigFile(toml)
+
+proc loadHistoryFile*(): Deque[string] =
+  let historyFile = cacheDir / "history_dir"
+  try:
+    var f: File = open(historyFile, FileMode.fmRead)
+    defer: close(f)
+    result = initDeque[string]()
+    while not f.endOfFile:
+      result.addLast(f.readLine())
+  except IOError:
+    result = initDeque[string]()

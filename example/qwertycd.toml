@@ -1,3 +1,32 @@
+#                         _                 _     _                  _
+#  __ ___      _____ _ __| |_ _   _  ___ __| |   | |_ ___  _ __ ___ | |
+# / _` \ \ /\ / / _ \ '__| __| | | |/ __/ _` |   | __/ _ \| '_ ` _ \| |
+#| (_| |\ V  V /  __/ |  | |_| |_| | (_| (_| |_  | || (_) | | | | | | |
+# \__, | \_/\_/ \___|_|   \__|\__, |\___\__,_(_)  \__\___/|_| |_| |_|_|
+#    |_|                      |___/
+#
+
 [Color]
+# Select directory and symbolic link color.
+# Choices: "Black", "Red", "Green", "Yellow", "Blue", "Magent", "Cyan", "White", "None"
+
 dir = "Blue"
 symlink = "Magenta"
+
+
+[Bookmark]
+# Select bookmark path lists.
+# If path does not exist, it will be ignored.
+
+path = [
+  "/path/to/dir",
+  "/path/to/dir2",
+  "/path/to/dir3",
+]
+
+
+[History]
+# Select history size.
+# When number of histories reaches this size, the oldest path will be deleted. 
+
+size = 26

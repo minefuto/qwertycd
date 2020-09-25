@@ -18,25 +18,36 @@ proc exitProc() {.noconv.} =
   showCursor()
   quit(0)
 
+proc exitProc(msg: string) {.noconv.} =
+  illwillDeinit()
+  showCursor()
+  if msg != "": echo msg
+  quit(0)
+
 proc startUi*() =
   illwillInit(fullscreen=true)
   setControlCHook(exitProc)
   hideCursor()
 
-proc writeUi*(dt: DirTable, p: Preview, s: Status, params: ConfigParams) =
+proc writeUi*(dt: DirTable, p: Preview, s: Status, cfg: ConfigParams) =
   var tb = newTerminalBuffer(terminalWidth(), terminalHeight())
   dt.refreshHeight(tb.height - 4)
   p.refreshWidth(tb.width)
 
   # draw TopLine
+  let topInfo: string = case dt.mode
+  of Normal: dt.path
+  of Bookmark: "Bookmark"
+  of History: "History"
+
   if tb.height > 0 and tb.width > 0:
     tb.setStyle({styleReverse})
-    tb.write(0, 0, dt.path)
-    if dt.path.len < tb.width - (AppName.len + 5):
-      tb.fill(dt.path.len, 0, tb.width - (AppName.len + 1), 0)
+    tb.write(0, 0, topInfo)
+    if topInfo.len < tb.width - (AppName.len + 5):
+      tb.fill(topInfo.len, 0, tb.width - (AppName.len + 1), 0)
       tb.write(tb.width - AppName.len, 0, AppName)
     else:
-      tb.fill(dt.path.len, 0, tb.width - 1, 0)
+      tb.fill(topInfo.len, 0, tb.width - 1, 0)
   tb.resetAttributes()
 
   # draw BottomLine
@@ -50,13 +61,16 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, params: ConfigParams) =
   # draw Entries
   for i, entry in dt.calcCurEntries():
     if entry.mark.startsWith('@'):
-      tb.setForegroundColor(params.symlinkColor)
+      tb.setForegroundColor(cfg.symlinkColor)
     elif entry.mark == "/":
-      tb.setForegroundColor(params.dirColor)
+      tb.setForegroundColor(cfg.dirColor)
 
-    tb.write(3, i + 2, entry.path.splitPath.tail, entry.mark)
+    if dt.mode == Normal:
+      tb.write(3, i + 2, entry.path.splitPath.tail, entry.mark)
+    else:
+      tb.write(3, i + 2, normalizePathEnd(entry.path))
+
     tb.write(1, i + 2, styleBright, dt.getQwerty(i))
-
     tb.resetAttributes()
 
   # draw Preview
@@ -74,17 +88,42 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, params: ConfigParams) =
   let key = getKey()
   case key
   of Key.None: discard
-  of Key.Enter: s.infoMsg = writeDirPath(dt.path); exitProc()
-  of Key.Escape: s.clearStatusMsg(); p.updateTextToClear()
-  of Key.QuestionMark: s.clearStatusMsg(); p.updateTextToHelp()
-  of Key.GreaterThan: s.infoMsg = p.plusX()
-  of Key.LessThan: s.infoMsg = p.minusX()
-  of Key.CtrlN: s.infoMsg = dt.plusCurIndex()
-  of Key.CtrlP: s.infoMsg = dt.minusCurIndex()
-  of Key.CtrlL: s.clearInfoMsg(); tb.clear(); tb.display()
-  of Key.Tilde: s.clearInfoMsg(); dt.updatePath(getHomeDir().normalizePathEnd())
-  of Key.Minus: s.infoMsg = dt.updatePathToParentDir()
-  of Key.Dot: s.infoMsg = dt.toggleShowHidden()
+  of Key.Tab: dt.toggleMode()
+  of Key.Enter:
+    if dt.mode == Normal:
+      s.infoMsg = writeCacheFile(dt.path)
+      s.infoMsg = writeHistoryFile(dt.histories, dt.path, cfg.historySize)
+      exitProc(s.infoMsg)
+    else: discard
+  of Key.Escape:
+    s.clearStatusMsg()
+    p.updateTextToClear()
+  of Key.QuestionMark:
+    s.clearStatusMsg()
+    p.updateTextToHelp()
+  of Key.GreaterThan:
+    s.infoMsg = p.plusX()
+  of Key.LessThan:
+    s.infoMsg = p.minusX()
+  of Key.CtrlN:
+    s.infoMsg = dt.plusCurIndex()
+  of Key.CtrlP:
+    s.infoMsg = dt.minusCurIndex()
+  of Key.CtrlL:
+    s.clearInfoMsg(); tb.clear(); tb.display()
+  of Key.Tilde:
+    if dt.mode == Normal:
+      s.clearInfoMsg()
+      dt.updatePath(getHomeDir().normalizePathEnd())
+    else: discard
+  of Key.Minus:
+    if dt.mode == Normal:
+      s.infoMsg = dt.updatePathToParentDir()
+    else: discard
+  of Key.Dot:
+    if dt.mode == Normal:
+      s.infoMsg = dt.toggleShowHidden()
+    else: discard
   else:
     let index = dt.getQwertyIndex($key)
     if index != -1:

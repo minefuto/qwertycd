@@ -1,9 +1,10 @@
 import strformat, strutils
 
 const HelpMsg = """
-Enter  : Change directory
+Enter  : Change directory to current path
 Esc    : Close preview window
-a-z    : Move to select directory/preview select file
+Tab    : Toggle mode(Normal/Bookmark/History)
+a-z    : Move to select directory / preview select file
 Ctrl-C : Exit qwertycd
 Ctrl-N : Move to next page
 Ctrl-P : Move to previous page

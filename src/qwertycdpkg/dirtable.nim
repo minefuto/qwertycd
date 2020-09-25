@@ -1,4 +1,4 @@
-import algorithm, os, strformat
+import algorithm, deques, os, strformat
 when defined(windows): import regex
 
 const Qwerty =
@@ -6,6 +6,11 @@ const Qwerty =
     "O", "P", "A", "S", "D", "F", "G", "H",
     "J", "K", "L", "Z", "X", "C", "V", "B",
     "N", "M"]
+
+type Mode* = enum
+  Normal
+  Bookmark
+  History
 
 type Entry* = object
   path: string
@@ -19,6 +24,9 @@ type DirTable* = ref object
   curIndex: int
   pageNum: tuple[cur: int, all: int]
   showHidden: bool
+  mode: Mode
+  bookmarks: seq[string]
+  histories*: Deque[string]
 
 proc path*(e: Entry): string {.inline.} =
   result = e.path
@@ -31,6 +39,9 @@ proc path*(dt: DirTable): string {.inline.} =
 
 proc pageNum*(dt: DirTable): tuple[cur: int, all: int] {.inline.} =
   result = dt.pageNum
+
+proc mode*(dt: DirTable): Mode {.inline.} =
+  result = dt.mode
 
 proc getMark(path: string): string =
   try:
@@ -71,7 +82,7 @@ proc updatePageNum(dt: DirTable) =
     else:
       dt.pageNum.all = dt.entries.len div dt.row + 1
 
-proc updatePathEntries(dt: DirTable) =
+proc updateEntries(dt: DirTable) =
   dt.curIndex = 0
   dt.entries = newSeq[Entry]()
   if dt.showHidden:
@@ -81,14 +92,29 @@ proc updatePathEntries(dt: DirTable) =
     for entry in dt.path.walkDir:
       if entry.path.initEntry.isHidden: continue
       else: dt.entries.add(entry.path.initEntry)
-
   dt.entries.sort(pathCmp)
+  dt.updatePageNum()
+
+proc updateEntries(dt: DirTable, entries: seq[string]) =
+  dt.curIndex = 0
+  dt.entries = newSeq[Entry]()
+  for entry in entries:
+    if dirExists(entry) or fileExists(entry):
+      dt.entries.add(entry.initEntry)
+  dt.updatePageNum()
+
+proc updateEntries(dt: DirTable, entries: Deque[string]) =
+  dt.curIndex = 0
+  dt.entries = newSeq[Entry]()
+  for entry in entries:
+    if dirExists(entry) or fileExists(entry):
+      dt.entries.add(entry.initEntry)
   dt.updatePageNum()
 
 proc updatePath*(dt: DirTable, path: string) =
   dt.path = path
-  dt.updatePathEntries()
-  dt.updatePageNum()
+  dt.updateEntries()
+  dt.mode = Normal
 
 proc updatePathToParentDir*(dt: DirTable): string =
   when defined(windows):
@@ -104,13 +130,15 @@ proc updatePathToParentDir*(dt: DirTable): string =
       dt.updatePath(dt.path.parentDir())
       result = ""
 
-proc newDirTable*(path: string): DirTable =
+proc newDirTable*(path: string, bookmarks: seq[string],
+                  histories: Deque[string]): DirTable =
   var dt = new DirTable
-  dt.path = path
+  dt.updatePath(path)
   dt.row = -1
   dt.showHidden = false
-  dt.updatePathEntries()
   dt.curIndex = 0
+  dt.bookmarks = bookmarks
+  dt.histories = histories
   result = dt
 
 proc plusCurIndex*(dt: DirTable): string =
@@ -161,8 +189,19 @@ proc refreshHeight*(dt: DirTable, height: int) =
 
 proc toggleShowHidden*(dt: DirTable): string =
   dt.showHidden = not dt.showHidden
-  dt.updatePathEntries()
+  dt.updateEntries()
   if dt.showHidden:
     result = "Show hidden: On"
   else:
     result = "Show hidden: Off"
+
+proc toggleMode*(dt: DirTable) =
+  if dt.mode == dt.mode.high:
+    dt.mode = dt.mode.low
+  else:
+    inc(dt.mode)
+
+  case dt.mode:
+  of Normal: dt.updateEntries()
+  of Bookmark: dt.updateEntries(dt.bookmarks)
+  of History: dt.updateEntries(dt.histories)
