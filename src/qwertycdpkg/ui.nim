@@ -124,27 +124,60 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, cfg: ConfigParams) =
     if dt.mode == Normal:
       s.infoMsg = dt.toggleShowHidden()
     else: discard
-  else:
+  of Key.Q, Key.W, Key.E, Key.R, Key.T, Key.Y, Key.U, Key.I, Key.O,
+     Key.P, Key.A, Key.S, Key.D, Key.F, Key.G, Key.H, Key.J, Key.K,
+     Key.L, Key.Z, Key.X, Key.C, Key.V, Key.B, Key.N, Key.M:
     let index = dt.getQwertyIndex($key)
-    if index != -1:
-      var entry: Entry
-      try:
-        entry = dt.calcCurEntries()[index]
-      except IndexError:
-        s.infoMsg = fmt"'{$key}' does not exist."
-        return
-      except OSError:
-        s.infoMsg = fmt"'{entry.path}' cannot be opened."
-        return
+    var entry: Entry
+    try:
+      entry = dt.calcCurEntries()[index]
+    except IndexError:
+      s.infoMsg = fmt"'{$key}' does not exist."
+      return
+    except OSError:
+      s.infoMsg = fmt"'{entry.path}' cannot be opened."
+      return
 
-      if entry.mark == "/" or entry.mark.startsWith("@/"):
-        dt.updatePath(entry.path)
-        s.clearInfoMsg()
-      elif entry.path.isBinary:
-        s.infoMsg = fmt"'{entry.path}' cannot be opened " &
-                   "because it is a binary file."
-      else:
-        s.infoMsg = p.updateTextToReadFile(entry.path)
-        s.updateFileMsg(entry.path)
+    if entry.mark == "/" or entry.mark.startsWith("@/"):
+      dt.updatePath(entry.path)
+      s.clearInfoMsg()
+    elif entry.path.isBinary:
+      s.infoMsg = fmt"'{entry.path}' cannot be opened " &
+                 "because it is a binary file."
     else:
-      discard
+      s.infoMsg = p.updateTextToReadFile(entry.path)
+      s.updateFileMsg(entry.path)
+  of Key.ShiftQ, Key.ShiftW, Key.ShiftE, Key.ShiftR, Key.ShiftT, Key.ShiftY,
+     Key.ShiftU, Key.ShiftI, Key.ShiftO, Key.ShiftP, Key.ShiftA, Key.ShiftS,
+     Key.ShiftD, Key.ShiftF, Key.ShiftG, Key.ShiftH, Key.ShiftJ, Key.ShiftK,
+     Key.ShiftL, Key.ShiftZ, Key.ShiftX, Key.ShiftC, Key.ShiftV, Key.ShiftB,
+     Key.ShiftN, Key.ShiftM:
+    let keyStr = $key
+    let index = dt.getQwertyIndex($keyStr[^1])
+    var entry: Entry
+    try:
+      entry = dt.calcCurEntries()[index]
+    except IndexError:
+      s.infoMsg = fmt"'{$keyStr[^1]}' does not exist."
+      return
+    except OSError:
+      s.infoMsg = fmt"'{entry.path}' cannot be opened."
+      return
+
+    if entry.mark == "/" or entry.mark.startsWith("@/"):
+      s.infoMsg = writeCacheFile(entry.path)
+      s.infoMsg = writeHistoryFile(dt.histories, entry.path, cfg.historySize)
+      exitProc(s.infoMsg)
+    elif entry.path.isBinary:
+      s.infoMsg = fmt"'{entry.path}' cannot be opened " &
+                 "because it is a binary file."
+    else:
+      let editor = getEnv("EDITOR")
+      if editor == "":
+        s.infoMsg = "$EDITOR is not set."
+      elif findExe(editor, true) == "":
+        s.infoMsg = fmt"{editor} is not found."
+      else:
+        discard execShellCmd(editor & " " & entry.path)
+  else:
+    discard

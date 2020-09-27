@@ -1,17 +1,18 @@
 import strformat, strutils
 
 const HelpMsg = """
-Enter  : Change directory to current path
 Esc    : Close preview window
-Tab    : Toggle mode(Normal/Bookmark/History)
+Tab    : Toggle mode(Normal / Bookmark / History)
 a-z    : Move to select directory / preview select file
+A-Z    : Change directory to select path / preview select file
+Enter  : Change directory to current path
 Ctrl-C : Exit qwertycd
 Ctrl-N : Move to next page
 Ctrl-P : Move to previous page
 Ctrl-L : Refresh screen
 -      : Move to parent directory
 ~      : Move to home directory
-.      : Toggle show hidden directory/file
+.      : Toggle show hidden directory / file
 ?      : Open help window
 """ 
 
