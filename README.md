@@ -6,6 +6,13 @@ This is terminal UI based `cd` command written in Nim.
 
 <img src="https://github.com/minefuto/qwertycd/blob/master/gif/qwertycd.gif">
 
+## Features
+- Change directory
+- Bookmark directory
+- History of change directory
+- Preview file
+- Open file with $EDITOR
+
 ## Getting Started
 
 ### 1. Install the qwertycd binary.
@@ -58,5 +65,18 @@ function qcd() {
   cd "`cat $XDG_CACHE_HOME/qwertycd/cache_dir`"
 }
 ```
+## Configurations
+Download `qwertycd.toml` from the following and edit.   
+https://github.com/minefuto/qwertycd/blob/master/example/qwertycd.toml
+
+**macOS/Linux**  
+Put the `qwertycd.toml` to the following path.  
+If defined `$XDG_CONFIG_HOME`: `$XDG_CONFIG_HOME/qwertycd/qwertycd.toml`  
+Others: `$HOME/.config/qwertycd/qwertycd.toml`  
+
+**Windows**  
+Put the `qwertycd.toml` to the following path.  
+`%APPDATA%\qwertycd\qwertycd.toml`
+
 ## Supported OS
 macOS, Linux, Windows

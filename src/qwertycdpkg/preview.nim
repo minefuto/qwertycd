@@ -3,8 +3,8 @@ import strformat, strutils
 const HelpMsg = """
 Esc    : Close preview window
 Tab    : Toggle mode(Normal / Bookmark / History)
-a-z    : Move to select directory / preview select file
-A-Z    : Change directory to select path / preview select file
+a-z    : Move to select directory / Preview select file
+A-Z    : Change directory to select path / Open select file
 Enter  : Change directory to current path
 Ctrl-C : Exit qwertycd
 Ctrl-N : Move to next page
