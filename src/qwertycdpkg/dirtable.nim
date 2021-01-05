@@ -196,8 +196,8 @@ proc toggleShowHidden*(dt: DirTable): string =
     result = "Show hidden: Off"
 
 proc toggleMode*(dt: DirTable) =
-  if dt.mode == dt.mode.high:
-    dt.mode = dt.mode.low
+  if dt.mode == Mode.high:
+    dt.mode = Mode.low
   else:
     inc(dt.mode)
 

@@ -12,7 +12,7 @@ bin           = @["qwertycd"]
 
 # Dependencies
 
-requires "nim >= 1.2.6"
+requires "nim >= 1.4.0"
 requires "illwill >= 0.2.0"
 requires "parsetoml >= 0.5.0"
 when defined(windows):

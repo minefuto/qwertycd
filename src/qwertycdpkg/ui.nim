@@ -131,7 +131,7 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, cfg: ConfigParams) =
     var entry: Entry
     try:
       entry = dt.calcCurEntries()[index]
-    except IndexError:
+    except IndexDefect:
       s.infoMsg = fmt"'{$key}' does not exist."
       return
     except OSError:
@@ -157,7 +157,7 @@ proc writeUi*(dt: DirTable, p: Preview, s: Status, cfg: ConfigParams) =
     var entry: Entry
     try:
       entry = dt.calcCurEntries()[index]
-    except IndexError:
+    except IndexDefect:
       s.infoMsg = fmt"'{$keyStr[^1]}' does not exist."
       return
     except OSError:
