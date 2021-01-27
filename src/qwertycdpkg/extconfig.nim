@@ -34,8 +34,6 @@ proc writeHistoryFile*(histories: var Deque[string],
                        path: string, size: int): string =
   let historyFile = homeDir / "history_dir"
   while histories.len >= size: histories.popLast()
-
-  #if histories.len == size: histories.popLast()
   histories.addFirst(path)
   try:
     var f: File = open(historyFile, FileMode.fmWrite)

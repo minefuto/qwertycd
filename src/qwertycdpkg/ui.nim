@@ -2,7 +2,7 @@ import mimetypes, os, osproc, strutils, strformat
 import illwill
 import dirtable, extconfig, preview, status
 
-const AppName = "qwertycd v0.1.2"
+const AppName = "qwertycd v0.1.3"
 
 proc isBinary(path: string): bool =
   var p = path.replace(" ", "\\ ")
