@@ -29,54 +29,42 @@ Or, download the binary from Release Page and drop it in your `$PATH`.
 ```
 function qcd() {
   qwertycd
-  cd "`cat $HOME/.cache/qwertycd/cache_dir`"
+  cd "`cat $HOME/.qwertycd/cache_dir`"
 }
 ```
 **Zsh(`.zshrc`)**
 ```
 function qcd() {
   qwertycd
-  cd "`cat $HOME/.cache/qwertycd/cache_dir`"
+  cd "`cat $HOME/.qwertycd/cache_dir`"
 }
 ```
 **Fish(`config.fish`)**
 ```
 function qcd
   qwertycd
-  cd (cat $HOME/.cache/qwertycd/cache_dir)
+  cd (cat $HOME/.qwertycd/cache_dir)
 end
 ```
 **PowerShell(`Microsoft.PowerShell_profile.ps1`)**
 ```
 function qcd() {
   qwertycd
-  $path = $env:HOMEPATH + "\.cache\qwertycd\cache_dir"
+  $path = $env:HOMEPATH + "\.qwertycd\cache_dir"
   $file = Get-Content $path
   Set-Location $file
 end
 ```
 
-If defined `$XDG_CACHE_HOME` variable environment,  
-please replace the above configuration from `$HOME/.cache` to `$XDG_CACHE_HOME`.  
-example:  
-```
-function qcd() {
-  qwertycd
-  cd "`cat $XDG_CACHE_HOME/qwertycd/cache_dir`"
-}
-```
 ## Configurations
 Download `qwertycd.toml` from the following and edit.   
 https://github.com/minefuto/qwertycd/blob/master/example/qwertycd.toml
 
 **macOS/Linux**  
-Put the `qwertycd.toml` to the following path.  
-If defined `$XDG_CONFIG_HOME`: `$XDG_CONFIG_HOME/qwertycd/qwertycd.toml`  
-Others: `$HOME/.config/qwertycd/qwertycd.toml`  
+Put to `$HOME/.qwertycd/qwertycd.toml`  
 
 **Windows**  
-Put the `qwertycd.toml` to the following path.  
-`%APPDATA%\qwertycd\qwertycd.toml`
+Put to `env:HOMEPATH\.qwertycd\qwertycd.toml`
 
 ## Supported OS
 macOS, Linux, Windows

@@ -8,7 +8,7 @@ proc main() =
   var p = newPreview()
   var s = newStatus()
 
-  s.infoMsg = createCacheDir()
+  s.infoMsg = createHomeDir()
   if s.infoMsg == "":
     s.infoMsg = writeCacheFile(dt.path)
   startUi()

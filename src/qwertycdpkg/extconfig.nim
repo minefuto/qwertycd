@@ -1,7 +1,7 @@
 import deques, os, strformat
 import illwill, parsetoml
 
-let cacheDir = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache") / "qwertycd"
+let homeDir = getHomeDir() / ".qwertycd"
 
 type ConfigParams* = object
   dirColor*: ForegroundColor
@@ -13,15 +13,15 @@ proc initConfigParams(): ConfigParams =
   result.symlinkColor = fgMagenta
   result.historySize = 26
 
-proc createCacheDir*(): string =
+proc createHomeDir*(): string =
   try:
-    createDir(cacheDir)
+    createDir(homeDir)
   except OSError:
-    return fmt"'{cacheDir}' cannot be created."
+    return fmt"'{homeDir}' cannot be created."
   result = ""
 
 proc writeCacheFile*(path: string): string =
-  let cacheFile = cacheDir / "cache_dir"
+  let cacheFile = homeDir / "cache_dir"
   try:
     var f: File = open(cacheFile, FileMode.fmWrite)
     defer: close(f)
@@ -32,7 +32,7 @@ proc writeCacheFile*(path: string): string =
 
 proc writeHistoryFile*(histories: var Deque[string],
                        path: string, size: int): string =
-  let historyFile = cacheDir / "history_dir"
+  let historyFile = homeDir / "history_dir"
   if histories.len >= size: histories.popLast()
   histories.addFirst(path)
   try:
@@ -78,7 +78,7 @@ proc parseConfigFile(toml: TomlValueRef):
         result.bookmarks.add(paths[i].getStr())
 
 proc loadConfigFile*(): tuple[cfg: ConfigParams, bookmarks: seq[string]] =
-  let configFile = getConfigDir() / "qwertycd" / "qwertycd.toml"
+  let configFile = homeDir / "qwertycd.toml"
 
   if not fileExists(configFile):
     result = (initConfigParams(), newSeq[string]())
@@ -87,7 +87,7 @@ proc loadConfigFile*(): tuple[cfg: ConfigParams, bookmarks: seq[string]] =
     result = parseConfigFile(toml)
 
 proc loadHistoryFile*(): Deque[string] =
-  let historyFile = cacheDir / "history_dir"
+  let historyFile = homeDir / "history_dir"
   try:
     var f: File = open(historyFile, FileMode.fmRead)
     defer: close(f)
